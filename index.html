@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hapi Birthday, Belek!</title>
+    <style>
+        /* --- GAYA UMUM --- */
+        html, body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #fff0f5; 
+            overflow: hidden; /* Mengunci scroll di awal */
+            height: 100vh;
+        }
+
+        /* Class khusus untuk membuka kunci scroll setelah animasi selesai */
+        html.allow-scroll, body.allow-scroll {
+            overflow: auto;
+            height: auto;
+        }
+
+        /* --- FASE 1: AMPLOP --- */
+        .envelope-wrapper {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: opacity 0.8s ease-out;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 100;
+        }
+        .envelope {
+            position: relative;
+            width: 300px;
+            height: 200px;
+            background-color: #ffb6c1;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        }
+        .envelope-flap {
+            position: absolute;
+            top: 0; width: 0; height: 0;
+            border-left: 150px solid transparent;
+            border-right: 150px solid transparent;
+            border-top: 100px solid #ff9ead;
+            transform-origin: top;
+            transition: transform 0.6s ease-in-out;
+            z-index: 3;
+        }
+        .envelope-front {
+            position: absolute;
+            width: 100%; height: 100%;
+            background-color: #ffb6c1;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+            z-index: 2;
+        }
+        .envelope-text {
+            position: absolute;
+            top: -60px; width: 100%;
+            text-align: center; color: #e84393;
+            font-size: 1.3em; font-weight: bold;
+            animation: pulse 1.5s infinite;
+        }
+        .heart-seal {
+            position: absolute;
+            bottom: 40px; left: 50%;
+            transform: translateX(-50%);
+            width: 50px; height: 50px;
+            background-color: #d63031;
+            border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            color: white; font-size: 25px;
+            z-index: 4; box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: transform 0.4s;
+        }
+        .envelope-wrapper.open .envelope-flap { transform: rotateX(180deg); z-index: 1; }
+        .envelope-wrapper.open .heart-seal { transform: translateX(-50%) translateY(20px) scale(0); opacity: 0; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        /* --- FASE 2: MAWAR & KELOPAK --- */
+        #roseContainer {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            font-size: 100px;
+            z-index: 90;
+            opacity: 0;
+            transition: transform 1s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 1s;
+            filter: drop-shadow(0 0 20px rgba(232, 67, 147, 0.5));
+            pointer-events: none; /* Agar tidak menghalangi klik */
+        }
+        
+        /* Mawar muncul (tanpa !important agar bisa dihapus JS) */
+        #roseContainer.rose-active {
+            transform: translate(-50%, -50%) scale(1.5);
+            opacity: 1;
+        }
+        
+        .petal {
+            position: fixed;
+            top: 50%; left: 50%;
+            width: 20px; height: 20px;
+            background-color: #d63031;
+            border-radius: 15px 0 15px 0; 
+            z-index: 85;
+            opacity: 0;
+            pointer-events: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        @keyframes fallPetal {
+            0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) rotate(var(--rot)) scale(0.8); opacity: 0; }
+        }
+
+        /* --- FASE 3: ISI UCAPAN --- */
+        .main-content {
+            position: absolute; /* Tersembunyi dari flow dokumen di awal */
+            top: 0; left: 0; width: 100%;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(50px);
+            transition: opacity 1.5s ease-in, transform 1.5s ease-out;
+            text-align: center;
+            z-index: 10;
+            padding-bottom: 50px;
+        }
+        .main-content.content-active {
+            position: relative; /* Mengembalikan ke flow normal agar memakan ruang dan bisa di-scroll */
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        header { background-color: #ffb6c1; padding: 60px 20px; color: #ffffff; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { font-size: 2.8em; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+        .container {
+            max-width: 800px; margin: -30px auto 40px auto; padding: 30px;
+            background: #ffffff; border-radius: 15px; box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+        .message { font-size: 1.2em; line-height: 1.8; padding: 20px; border-bottom: 2px dashed #ffb6c1; margin-bottom: 20px; }
+        .wish { color: #e84393; font-style: italic; font-weight: bold; font-size: 1.3em; margin: 20px 0; }
+        .gallery-title { color: #e84393; font-size: 1.5em; margin-bottom: 15px; font-weight: bold; }
+        .gallery { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
+        .gallery img { width: 180px; height: 180px; object-fit: cover; border-radius: 12px; border: 4px solid #ffeaa7; transition: transform 0.3s ease; }
+        .gallery img:hover { transform: scale(1.05); }
+        footer { padding: 20px; font-size: 0.9em; color: #b2bec3; text-align: center; }
+
+        /* --- ANIMASI KLIK HATI --- */
+        .heart-click {
+            position: fixed; color: #e84393; font-size: 24px; pointer-events: none;
+            animation: floatUp 1.5s ease-out forwards; z-index: 9999;
+        }
+        @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-100px) scale(1.5); opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <audio id="bg-music" loop>
+        <source src="/audio/musik.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="envelope-wrapper" id="envelopeWrapper" onclick="mulaiKejutan()">
+        <div class="envelope-text">Special delivery for:</div>
+        <div class="envelope">
+            <div class="envelope-flap"></div>
+            <div class="envelope-front"></div>
+            <div class="heart-seal">❤️</div>
+        </div>
+    </div>
+
+    <div id="roseContainer">🌹</div>
+
+    <div class="main-content" id="mainContent">
+        <header>
+            <h1>Untuk kamu, <br> Belek! ❤️</h1>
+        </header>
+
+        <div class="container">
+            <div class="message">
+                <p>Halo Sayang,</p>
+                <p>Selamat hari Brojoll kamu hehe.</p>
+                
+            </div>
+
+            <div class="wish">
+                <p>"Semoga di tahun 25 ini, Apapun yang belum tercapai di tahun sebelumnya. bisa tercapai di tahun ini. Selalu diberikan Kesehatan, Kesuksesan dan Kemajuan wkwk. Ohiya, semoga karir kamu terus berkembang. dan semoga di tahun ini selalu bahagia. ga ada drama drama kayak di tahun sebelumnya." Buddha Bless You belek ❤️</p>
+                <p><i>I love you so much, Abigail.</i> ❤️</p>
+            </div>
+
+            <div class="gallery-title">Foto aku dan kamu</div>
+            <div class="gallery">
+                <img src="/asset/1.jpeg" alt="Kenangan 1">
+                <img src="/asset/2.jpeg" alt="Kenangan 2">
+                <img src="/asset/3.jpeg" alt="Kenangan 3">
+            </div>
+        </div>
+
+        <footer>
+            Dibuat dengan segenap hati untuk Abigail Hanzel Laimena.
+        </footer>
+    </div>
+
+    <script>
+        const envelopeWrapper = document.getElementById("envelopeWrapper");
+        const roseContainer = document.getElementById("roseContainer");
+        const mainContent = document.getElementById("mainContent");
+        const bgMusic = document.getElementById("bg-music");
+        
+        // Targetkan html dan body untuk scroll
+        const docHtml = document.documentElement;
+        const docBody = document.body;
+
+        function mulaiKejutan() {
+            // 1. Amplop Terbuka & Putar Musik
+            envelopeWrapper.classList.add("open");
+            bgMusic.play().catch(e => console.log("Menunggu interaksi untuk audio."));
+
+            // 2. Setelah 0.8 detik, amplop hilang dan MAWAR muncul
+            setTimeout(() => {
+                envelopeWrapper.style.opacity = "0";
+                setTimeout(() => envelopeWrapper.style.display = "none", 800);
+                
+                roseContainer.classList.add("rose-active");
+            }, 800);
+
+            // 3. Setelah mawar tampil 1.5 detik, ledakkan kelopak dan HAPUS mawar
+            setTimeout(() => {
+                buatKelopakBerguguran();
+                
+                // MENGHILANGKAN MAWAR dengan mencabut class-nya
+                roseContainer.classList.remove("rose-active");
+            }, 2500);
+
+            // 4. Munculkan pesan utama & BUKA KUNCI SCROLL
+            setTimeout(() => {
+                mainContent.classList.add("content-active");
+                docHtml.classList.add("allow-scroll");
+                docBody.classList.add("allow-scroll");
+            }, 3000);
+        }
+
+        function buatKelopakBerguguran() {
+            const jumlahKelopak = 40; 
+            
+            for (let i = 0; i < jumlahKelopak; i++) {
+                let petal = document.createElement("div");
+                petal.className = "petal";
+                
+                let spreadX = (Math.random() * 800) - 400; 
+                let spreadY = (Math.random() * 500) + 300; 
+                let rotasi = Math.random() * 360 + 180; 
+                let durasi = (Math.random() * 2) + 2; 
+
+                petal.style.setProperty('--tx', `${spreadX}px`);
+                petal.style.setProperty('--ty', `${spreadY}px`);
+                petal.style.setProperty('--rot', `${rotasi}deg`);
+                
+                petal.style.animation = `fallPetal ${durasi}s ease-in forwards`;
+                
+                document.body.appendChild(petal);
+
+                setTimeout(() => {
+                    petal.remove();
+                }, durasi * 1000);
+            }
+        }
+
+        // Efek Hati saat diklik
+        document.addEventListener("click", function(e) {
+            if (!mainContent.classList.contains("content-active")) return;
+
+            const heart = document.createElement("div");
+            heart.innerHTML = "❤️";
+            heart.className = "heart-click";
+            heart.style.left = (e.clientX - 12) + "px";
+            heart.style.top = (e.clientY - 12) + "px";
+            document.body.appendChild(heart);
+
+            setTimeout(() => heart.remove(), 1500);
+        });
+    </script>
+</body>
+</html>
